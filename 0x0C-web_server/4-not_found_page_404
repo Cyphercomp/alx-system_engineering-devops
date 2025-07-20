@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Installing Nginx and redirection
+
+set -e  # Exit on any error
+
+# Install nginx
+apt-get update -y
+apt-get install nginx -y
+
+# Allow HTTP traffic
+ufw allow 'Nginx HTTP' || true
+
+# Create default and 404 error page
+echo "Hello World!" > /var/www/html/index.html
+echo "Ceci n'est pas une page" > /var/www/html/error_404.html
+
+# Insert custom 404 configuration into Nginx default server block
+if ! grep -q "error_404.html" /etc/nginx/sites-available/default; then
+  sed -i "/server_name _;/a \\
+\\n    error_page 404 /error_404.html;\\n\
+    location = /error_404.html {\\n\
+        root /var/www/html;\\n\
+        internal;\\n\
+    }" /etc/nginx/sites-available/default
+fi
+
+# Restart Nginx using service
+service nginx restart
